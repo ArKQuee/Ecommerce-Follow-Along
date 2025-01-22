@@ -51,3 +51,8 @@ The E-Commerce application is a perfect project to learn and implement full-stac
 - Creating a dynamic and engaging frontend.
 - Managing complex workflows, such as authentication, payments, and order tracking.
 - Exploring tools and technologies for deployment, testing, and continuous integration.
+
+
+## Updates
+- Milestone 1: Made a README.md for the Ecommerce Application and laid the foundation for your E-Commerce Application.
+- Milestone 2: Made the frontend and backend, and built the login page for the application.
