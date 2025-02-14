@@ -56,3 +56,4 @@ The E-Commerce application is a perfect project to learn and implement full-stac
 ## Updates
 - Milestone 1: Made a README.md for the Ecommerce Application and laid the foundation for your E-Commerce Application.
 - Milestone 2: Set up the frontend with React using Create React App. Configured Tailwind CSS for styling. Set up a basic Node.js backend server with Express Developed a functional and styled login page for the frontend.
+- Milestone 3: Created backend folders: config/, controllers/, routes/, models/, middleware/. Set up a MongoDB connection in config/db.js. Implemented a basic User API (/api/users/test). Added error handling middleware. Configured nodemon for development.
