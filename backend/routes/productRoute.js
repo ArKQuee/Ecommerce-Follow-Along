@@ -4,9 +4,9 @@ const multer = require('multer');
 const Product = require('../models/productModel');
 const fs = require('fs').promises;
 const path = require('path');
-const ErrorResponse = require('../utils/errorResponse');
 const { protect } = require('../middlewares/auth');
-
+const ErrorResponse = require('../utils/errorResponse');
+``
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, '../uploads');
 fs.mkdir(uploadsDir, { recursive: true }).catch(console.error);

@@ -1,124 +1,55 @@
 const User = require('../models/userModel');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 
-// Generate JWT token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
-  });
-};
-
-// Register a new user
-exports.register = async (req, res) => {
-  const { name, email, password } = req.body;
-
-  try {
-    const userExists = await User.findOne({ email });
-
-    if (userExists) {
-      return res.status(400).json({ success: false, error: 'User already exists' });
-    }
-
-    const user = await User.create({
-      name,
-      email,
-      password: bcrypt.hashSync(password, 10),
-    });
-
-    res.status(201).json({
-      success: true,
-      data: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        token: generateToken(user._id),
-      },
-    });
-  } catch (error) {
-    res.status(400).json({ success: false, error: error.message });
-  }
-};
-
-// Login user
-exports.login = async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    const user = await User.findOne({ email });
-
-    if (user && (await bcrypt.compare(password, user.password))) {
-      res.status(200).json({
-        success: true,
-        data: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          token: generateToken(user._id),
-        },
-      });
-    } else {
-      res.status(401).json({ success: false, error: 'Invalid email or password' });
-    }
-  } catch (error) {
-    res.status(400).json({ success: false, error: error.message });
-  }
-};
-
-// Protect middleware
-exports.protect = async (req, res, next) => {
-  let token;
-
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
+const signup = async function(req, res) {
     try {
-      token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = await User.findById(decoded.id).select('-password');
-      next();
+        const { email, password } = req.body;
+
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ msg: 'User already exists' });
+        }
+
+        // Hash the password before saving
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newUser = new User({
+            email,
+            password: hashedPassword, 
+        });
+
+        await newUser.save();
+        res.status(201).json({ msg: 'User created successfully', user: newUser });
+        
     } catch (error) {
-      res.status(401).json({ success: false, error: 'Not authorized, token failed' });
+        console.error('Signup error:', error);
+        res.status(500).json({ msg: 'Server Error', error: error.message });
     }
-  }
+}
 
-  if (!token) {
-    res.status(401).json({ success: false, error: 'Not authorized, no token' });
-  }
-};
+const login = async () => {
+    try {
+        const {email,password} = req.body;
+        
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ msg: 'Invalid creditionals' });
+        }
 
-// Get user profile
-exports.getUserProfile = async (req, res) => {
-  res.status(200).json({
-    success: true,
-    data: req.user,
-  });
-};
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-// Update user profile
-exports.updateUserProfile = async (req, res) => {
-  const user = await User.findById(req.user._id);
 
-  if (user) {
-    user.name = req.body.name || user.name;
-    user.email = req.body.email || user.email;
-    if (req.body.password) {
-      user.password = bcrypt.hashSync(req.body.password, 10);
+        const token = jwt.sign({id: user.id}, process.env.SECRET_KEY, {expiresIn: "1h"});
+
+        res.status(200).json({message: "Login successful", token});
+
+
+
+    } catch(err){
+        res.status(500).json({message: err.message})
     }
+}
 
-    const updatedUser = await user.save();
-
-    res.status(200).json({
-      success: true,
-      data: {
-        _id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        token: generateToken(updatedUser._id),
-      },
-    });
-  } else {
-    res.status(404).json({ success: false, error: 'User not found' });
-  }
-};
+module.exports = { signup,login };
