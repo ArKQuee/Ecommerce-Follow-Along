@@ -10,3 +10,5 @@ export default {
   plugins: [],
 }
 
+// Add this to your CSS or Tailwind config for custom animations
+// Define custom animations directly in your Tailwind CSS configuration or external CSS file.
