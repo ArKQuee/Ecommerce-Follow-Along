@@ -1,10 +1,37 @@
-import React from 'react';
-
+import React, { useState } from 'react';
 import { Minus, Plus, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Cart = () => {
-  
+  // Mock initial state - you'll replace this with your actual state management
+  const [cartItems, setCartItems] = useState([
+    {
+      id: 1,
+      title: 'Sample Product',
+      category: 'Electronics',
+      price: 99.99,
+      quantity: 1,
+      image: '/api/placeholder/100/100'
+    }
+  ]);
+
+  // Calculate total items and price
+  const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0);
+  const totalPrice = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+
+  // Remove item from cart
+  const removeFromCart = (itemId) => {
+    setCartItems(cartItems.filter(item => item.id !== itemId));
+  };
+
+  // Update quantity of an item
+  const updateQuantity = (itemId, newQuantity) => {
+    if (newQuantity < 1) return; // Prevent quantity from going below 1
+
+    setCartItems(cartItems.map(item => 
+      item.id === itemId ? { ...item, quantity: newQuantity } : item
+    ));
+  };
 
   if (cartItems.length === 0) {
     return (

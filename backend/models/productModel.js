@@ -20,9 +20,24 @@ const productSchema = new mongoose.Schema({
     required: [true, 'Price is required'],
     min: [0, 'Price cannot be negative'],
     validate: {
-      validator: Number.isFinite,
-      message: 'Price must be a valid number'
+      validator: function (v) {
+        return Number.isFinite(v) && v >= 0;
+      },
+      message: 'Price must be a valid positive number'
     }
+  },
+  originalPrice: {
+    type: Number,
+    validate: {
+      validator: function (v) {
+        return v == null || v >= this.price;
+      },
+      message: 'Original price must be greater than or equal to current price'
+    }
+  },
+  discountPercentage: {
+    type: Number,
+    default: 0
   },
   category: {
     type: String,
@@ -36,16 +51,20 @@ const productSchema = new mongoose.Schema({
     type: [String],
     required: [true, 'At least one product image is required'],
     validate: {
-      validator: function(v) {
-        return v && v.length > 0;
+      validator: function (v) {
+        return v.length > 0 && v.every(url => /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif)$/i.test(url));
       },
-      message: 'Product must have at least one image'
+      message: 'All images must be valid URLs ending in .jpg, .jpeg, .png, .webp, or .gif'
     }
   },
   stock: {
     type: Number,
     required: [true, 'Stock quantity is required'],
     min: [0, 'Stock cannot be negative'],
+    validate: {
+      validator: Number.isInteger,
+      message: 'Stock must be an integer'
+    },
     default: 1
   },
   userEmail: {
@@ -59,15 +78,6 @@ const productSchema = new mongoose.Schema({
     max: [5, 'Rating cannot exceed 5'],
     default: 0
   },
-  originalPrice: {
-    type: Number,
-    validate: {
-      validator: function(v) {
-        return !v || v >= this.price;
-      },
-      message: 'Original price must be greater than or equal to current price'
-    }
-  },
   isAvailable: {
     type: Boolean,
     default: true
@@ -78,22 +88,23 @@ const productSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Virtual for discount percentage
-productSchema.virtual('discountPercentage').get(function() {
+// **🔹 Virtual for Discount Percentage**
+productSchema.virtual('calculatedDiscount').get(function () {
   if (this.originalPrice && this.price) {
     return Math.round(((this.originalPrice - this.price) / this.originalPrice) * 100);
   }
   return 0;
 });
 
-// Method to check stock availability
-productSchema.methods.checkAvailability = function(quantity = 1) {
+// **🔹 Method to Check Availability**
+productSchema.methods.checkAvailability = function (quantity = 1) {
   return this.stock >= quantity;
 };
 
-// Pre-save middleware to update isAvailable based on stock
-productSchema.pre('save', function(next) {
+// **🔹 Pre-save Middleware to Update Availability & Discount**
+productSchema.pre('save', function (next) {
   this.isAvailable = this.stock > 0;
+  this.discountPercentage = this.calculatedDiscount; // Update discount percentage dynamically
   next();
 });
 

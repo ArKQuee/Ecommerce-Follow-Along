@@ -1,40 +1,38 @@
-const Product = require('../models/productModel');
+const Product = require('../models/productModel'); // Assuming a Product model exists
 
-// Create a new product
-const createProduct = async (req, res) => {
-    const { name, description, price, category, stock, images } = req.body;
-
-    // Validate required fields
-    if (!name || !description || !price || !category || !stock || !images) {
-        return res.status(400).json({ message: 'All fields are required' });
-    }
-
-    // Validate price and stock
-    if (price < 0 || stock < 0) {
-        return res.status(400).json({ message: 'Price and stock must be non-negative' });
-    }
-
+// Add a new product
+exports.addProduct = async (req, res) => {
     try {
-        const product = new Product(req.body);
-        await product.save();
-        res.status(201).json(product);
+        const { name, description, price, category } = req.body;
+        const images = req.files.map(file => file.path); // Assuming multer stores file paths
+
+        const newProduct = new Product({
+            name,
+            description,
+            price,
+            category,
+            images,
+        });
+
+        const savedProduct = await newProduct.save();
+        res.status(201).json({ message: 'Product added successfully!', product: savedProduct });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(500).json({ message: 'Failed to add product', error: error.message });
     }
 };
 
-// Get all products
-const getAllProducts = async (req, res) => {
+// Fetch all products
+exports.getAllProducts = async (req, res) => {
     try {
         const products = await Product.find();
         res.status(200).json(products);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Failed to fetch products', error: error.message });
     }
 };
 
-// Get a single 4 by ID
-const getProductById = async (req, res) => {
+// Fetch a single product by ID
+exports.getProductById = async (req, res) => {
     try {
         const product = await Product.findById(req.params.id);
         if (!product) {
@@ -42,52 +40,41 @@ const getProductById = async (req, res) => {
         }
         res.status(200).json(product);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Failed to fetch product', error: error.message });
     }
 };
 
 // Update a product by ID
-const updateProduct = async (req, res) => {
-    const { name, description, price, category, stock, images } = req.body;
-
-    // Validate required fields
-    if (!name || !description || !price || !category || !stock || !images) {
-        return res.status(400).json({ message: 'All fields are required' });
-    }
-
-    // Validate price and stock
-    if (price < 0 || stock < 0) {
-        return res.status(400).json({ message: 'Price and stock must be non-negative' });
-    }
-
+exports.updateProduct = async (req, res) => {
     try {
-        const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-        if (!product) {
+        const { name, description, price, category } = req.body;
+        const images = req.files.map(file => file.path); // Assuming multer stores file paths
+
+        const updatedProduct = await Product.findByIdAndUpdate(
+            req.params.id,
+            { name, description, price, category, images },
+            { new: true } // Return the updated document
+        );
+
+        if (!updatedProduct) {
             return res.status(404).json({ message: 'Product not found' });
         }
-        res.status(200).json(product);
+
+        res.status(200).json({ message: 'Product updated successfully!', product: updatedProduct });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(500).json({ message: 'Failed to update product', error: error.message });
     }
 };
 
 // Delete a product by ID
-const deleteProduct = async (req, res) => {
+exports.deleteProduct = async (req, res) => {
     try {
-        const product = await Product.findByIdAndDelete(req.params.id);
-        if (!product) {
+        const deletedProduct = await Product.findByIdAndDelete(req.params.id);
+        if (!deletedProduct) {
             return res.status(404).json({ message: 'Product not found' });
         }
-        res.status(200).json({ message: 'Product deleted successfully' });
+        res.status(200).json({ message: 'Product deleted successfully!' });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Failed to delete product', error: error.message });
     }
-};
-
-module.exports = {
-    createProduct,
-    getAllProducts,
-    getProductById,
-    updateProduct,
-    deleteProduct
 };

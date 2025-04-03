@@ -1,30 +1,27 @@
 import React, { useState } from "react";
 import { Mail, Lock } from "lucide-react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
+  const navigate = useNavigate();
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(""); // Clear previous errors
+    
 
     try {
-      const response = await fetch("https://your-backend-url.com/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await axios.post("http://localhost:5000/api/users/login", { email, password });
+      const data = response.data;
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (response.status===200) {
         // Store the hashed token in localStorage
+        console.log(data.message);
         localStorage.setItem("token", data.token);
-        alert("Login successful!");
+        navigate("/");
         // Redirect or perform further actions
       } else {
         throw new Error(data.message || "Login failed");
